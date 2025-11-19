@@ -12,3 +12,4 @@ services:
       - "5432:5432"
     volumes:
       - ./volumes:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d # 关键：挂载初始化脚本

@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
-import { getEmbedding, sleep } from "../lib/utils/utils.js";
+import { getEmbedding, sleep } from "../lib/utils.ts";
 import { exit } from "node:process";
 // import { drizzleInsertChunk } from './db'; // 预留数据库写入接口
 import { ProxyAgent, setGlobalDispatcher } from "undici";
