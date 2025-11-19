@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 天听计划 RAG 个人知识库项目
 
-## Getting Started
+## 本地开发环境启动
 
-First, run the development server:
+1. 启动 pgvector 数据库（需先安装 Docker Compose）：
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker-compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 安装依赖（需先安装 pnpm）：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. 配置环境变量：
 
-## Learn More
+复制 `.env.example` 为 `.env`，并填写 HuggingFace API Key。
 
-To learn more about Next.js, take a look at the following resources:
+4. 运行分块脚本（chunking）：
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm chunking
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. 运行分块单元测试：
 
-## Deploy on Vercel
+```bash
+pnpm test:chunking
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 目录说明
+- `doc/tianting.md`：小说原文
+- `scripts/chunking.ts`：分块与 embedding 脚本
+- `scripts/chunking.test.ts`：分块与 embedding 单元测试
+- `docker-compose.yml`：本地 pgvector 数据库
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 说明
+- embedding 通过 LangChain.js 调用 HuggingFace bge-m3 Inference API
+- 所有环境（开发/生产）均用 HF API
+- 数据库连接参数见 `.env.example`
