@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
@@ -7,7 +6,7 @@ import { getEmbedding } from "../lib/utils.ts";
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { chunks as chunksTable } from "./db.ts";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { exit } from "process";
@@ -46,7 +45,6 @@ const EMBEDDING_MODEL = "BAAI/bge-m3";
 const TOP_K = 5;
 
 async function main() {
-  console.log("HF_API_KEY", HF_API_KEY);
   // 1. 获取 query embedding
   const queryEmbedding = await getEmbedding(
     QUERY_TEXT,
@@ -54,7 +52,7 @@ async function main() {
     EMBEDDING_MODEL
   );
 
-  console.log("queryEmbedding:", queryEmbedding);
+  //   console.log("queryEmbedding:", queryEmbedding);
 
   // 2. 连接数据库
   const client = new Client({ connectionString: process.env.DATABASE_URL });
