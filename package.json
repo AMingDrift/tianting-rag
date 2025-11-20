@@ -13,12 +13,15 @@
     "drizzle:generate": "pnpm exec drizzle-kit generate --config drizzle.config.ts",
     "drizzle:push": "pnpm exec drizzle-kit push --config drizzle.config.ts",
     "pg:restart": "sudo rm -rf volumes && sudo docker compose down && sudo docker compose up -d",
-    "pg:dbo": "npx drizzle-kit studio"
+    "dbo": "npx drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.69",
+    "@ai-sdk/react": "^2.0.97",
     "@huggingface/inference": "^4.13.3",
     "@langchain/core": "^1.0.6",
     "@langchain/openai": "^1.1.2",
+    "ai": "^5.0.97",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
     "langchain": "^1.0.6",
@@ -27,7 +30,8 @@
     "pgvector": "^0.2.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "undici": "^7.16.0"
+    "undici": "^7.16.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -4,22 +4,11 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
 import { getEmbedding, sleep } from "../lib/utils.ts";
-import { exit } from "node:process";
-// import { drizzleInsertChunk } from './db'; // 预留数据库写入接口
+
+import { Client } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { chunks as chunksTable } from "./db.ts";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
-
-const PROXY_URL = "http://172.19.80.1:7897";
-// 设置全局 dispatcher
-const proxyAgent = new ProxyAgent({
-  uri: PROXY_URL,
-  keepAliveTimeout: 10000,
-  keepAliveMaxTimeout: 10000,
-  connect: {
-    rejectUnauthorized: false, // 开发环境
-  },
-});
-
-setGlobalDispatcher(proxyAgent);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,7 +17,22 @@ dotenv.config({
   override: false,
   quiet: true,
 });
+
 const HF_API_KEY = process.env.HF_API_KEY || "";
+
+const PROXY_URL = process.env.PROXY_URL || "";
+if (PROXY_URL) {
+  // 设置全局 dispatcher
+  const proxyAgent = new ProxyAgent({
+    uri: PROXY_URL,
+    keepAliveTimeout: 10000,
+    keepAliveMaxTimeout: 10000,
+    connect: {
+      rejectUnauthorized: false, // 开发环境
+    },
+  });
+  setGlobalDispatcher(proxyAgent);
+}
 
 // 配置
 const NOVEL_PATH = path.resolve(__dirname, "../doc/tianting.md");
@@ -45,7 +49,7 @@ function chunkText(
   text: string,
   chunkSize = CHUNK_SIZE,
   overlap = CHUNK_OVERLAP
-): { chunk: string; meta: any }[] {
+): { chunk: string; meta: unknown }[] {
   // 按章节分割
   const chapterRegex = /^##+\s*(.+)$/gm;
   let match;
@@ -58,7 +62,7 @@ function chunkText(
   });
 
   // 生成 chunk
-  const chunks: { chunk: string; meta: any }[] = [];
+  const chunks: { chunk: string; meta: unknown }[] = [];
   for (const chapter of chapters) {
     const chapterText = text.slice(chapter.start, chapter.end).trim();
     let pos = 0;
@@ -81,12 +85,22 @@ function chunkText(
 async function main() {
   const novel = readNovel(NOVEL_PATH);
   const chunks = chunkText(novel);
+
+  // 连接数据库
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  const db = drizzle(client);
+
   for (let i = 0; i < chunks.length; i++) {
     const { chunk, meta } = chunks[i];
     console.log(`[${i + 1}/${chunks.length}] 正在生成 embedding...`);
     const embedding = await getEmbedding(chunk, HF_API_KEY, EMBEDDING_MODEL);
-    // 写入数据库（预留）
-    // await drizzleInsertChunk({ chunk, meta, embedding });
+    // 写入数据库
+    await db.insert(chunksTable).values({
+      chunk,
+      meta,
+      embedding,
+    });
     console.log({
       meta,
       chunk: chunk.slice(0, 40) + "...",
@@ -94,6 +108,8 @@ async function main() {
     });
     await sleep(3000);
   }
+
+  await client.end();
 }
 
 main();
