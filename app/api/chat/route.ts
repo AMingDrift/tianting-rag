@@ -1,4 +1,4 @@
-import { setProxy, sleep } from "@/lib/utils";
+import { setProxy } from "@/lib/utils";
 import { createHuggingFace } from "@ai-sdk/huggingface";
 import { streamText, UIMessage, convertToModelMessages } from "ai";
 import { Client } from "pg";
