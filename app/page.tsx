@@ -62,7 +62,7 @@ export default function Chat() {
           className=" scrollbar-custom size-full flex flex-col items-center overflow-auto  scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
           style={{ height: messagesHeight }}
         >
-          <div className="flex flex-col gap-4  w-4xl max-w-4xl px-4">
+          <div className="flex flex-col gap-4  w-full max-w-4xl px-4">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -71,7 +71,7 @@ export default function Chat() {
                 }`}
               >
                 <div
-                  className={`whitespace-pre-wrap px-4 py-2 rounded-2xl max-w-[80%] break-words shadow-md mb-2 ${
+                  className={`whitespace-pre-wrap p-4 rounded-2xl max-w-[80%] break-words shadow-md mb-2 ${
                     message.role === "user"
                       ? "bg-blue-100/70 text-blue-900"
                       : "bg-zinc-100/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"

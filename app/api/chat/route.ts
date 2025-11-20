@@ -59,12 +59,10 @@ export async function POST(req: Request) {
     embedding: number[];
     cosine_distance: number;
   }[];
-  const context = topChunks
-    .map((c, i) => `【片段${i + 1}】${c.chunk}`)
-    .join("\n\n");
+  const context = topChunks.map((c) => `${c.chunk}`).join("\n\n");
 
   // 3. 拼接 prompt，调用大模型
-  const systemPrompt = `你是《天听计划：罗斯陷阱》小说问答助手，请结合给定片段和用户问题，精准、简洁地回答。优先用片段内容作答，不要编造。`;
+  const systemPrompt = `你是《天听计划：罗斯陷阱》小说问答助手，请结合给定片段和用户问题，精准、简洁地回答。优先用片段内容作答，不要编造。并给出引用的片段内容。`;
   const ragMessages: Omit<UIMessage, "id">[] = [
     {
       role: "system",
