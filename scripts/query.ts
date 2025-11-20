@@ -2,14 +2,14 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
-import { getEmbedding, sleep } from "../lib/utils.ts";
+import { getEmbedding, setProxy, sleep } from "../lib/utils.ts";
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-
-import { ProxyAgent, setGlobalDispatcher } from "undici";
+import { QUERY_LIST } from "../lib/constant.ts";
+import { exit } from "node:process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,27 +23,7 @@ const HF_API_KEY = process.env.HF_API_KEY || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ""; // 通义千问的API Key
 const OPENAI_API_BASE = process.env.OPENAI_API_BASE || ""; // 通义千问兼容OpenAI的endpoint
 
-const PROXY_URL = process.env.PROXY_URL || "";
-if (PROXY_URL) {
-  // 设置全局 dispatcher
-  const proxyAgent = new ProxyAgent({
-    uri: PROXY_URL,
-    keepAliveTimeout: 10000,
-    keepAliveMaxTimeout: 10000,
-    connect: {
-      rejectUnauthorized: false, // 开发环境
-    },
-  });
-  setGlobalDispatcher(proxyAgent);
-}
-
-const QUERY_LIST = [
-  "“天听计划”是在哪一年正式启动的？其核心原则是什么？",
-  "丁仪发现了罗斯信号中的哪两处“地球专属”的异常细节，从而怀疑这是伪造的？",
-  "文中丁仪提到的“伪清洁鱼”比喻，想要说明什么道理？",
-  "为什么丁仪认为，即使人类文明在未来百年内技术突飞猛进，也无法对罗斯文明构成威胁？",
-  "《天听计划》如何通过“开拓者舰队”与“火种计划”的对比，体现对“黑暗森林”理论的不同应对策略？",
-];
+setProxy();
 
 const EMBEDDING_MODEL = "BAAI/bge-m3";
 const TOP_K = 5;
@@ -104,6 +84,7 @@ async function main() {
     const res = await llm.invoke(messages);
     console.log("AI回答：", res.content);
 
+    // exit(1);
     console.log("--------------------------------------------------------");
     await sleep(3000);
   }

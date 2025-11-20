@@ -3,12 +3,11 @@ import path from "path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
-import { getEmbedding, sleep } from "../lib/utils.ts";
+import { getEmbedding, sleep, setProxy } from "../lib/utils.ts";
 
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { chunks as chunksTable } from "./db.ts";
-import { ProxyAgent, setGlobalDispatcher } from "undici";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,19 +19,7 @@ dotenv.config({
 
 const HF_API_KEY = process.env.HF_API_KEY || "";
 
-const PROXY_URL = process.env.PROXY_URL || "";
-if (PROXY_URL) {
-  // 设置全局 dispatcher
-  const proxyAgent = new ProxyAgent({
-    uri: PROXY_URL,
-    keepAliveTimeout: 10000,
-    keepAliveMaxTimeout: 10000,
-    connect: {
-      rejectUnauthorized: false, // 开发环境
-    },
-  });
-  setGlobalDispatcher(proxyAgent);
-}
+setProxy();
 
 // 配置
 const NOVEL_PATH = path.resolve(__dirname, "../doc/tianting.md");
