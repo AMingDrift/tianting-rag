@@ -59,10 +59,10 @@ export default function Chat() {
     <div className="flex flex-col min-h-screen w-full items-center backdrop-blur-md">
       <div className="flex flex-col w-full flex-1 items-center pt-5  ">
         <div
-          className=" scrollbar-custom size-full flex flex-col gap-4 items-center overflow-auto  scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
+          className=" scrollbar-custom size-full flex flex-col items-center overflow-auto  scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
           style={{ height: messagesHeight }}
         >
-          <div className="w-4xl max-w-4xl px-4">
+          <div className="flex flex-col gap-4  w-4xl max-w-4xl px-4">
             {messages.map((message) => (
               <div
                 key={message.id}

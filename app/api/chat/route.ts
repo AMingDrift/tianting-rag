@@ -15,6 +15,7 @@ const TOP_K = 5;
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
 
+  await setProxy();
   const HF_API_KEY = process.env.HF_API_KEY || "";
   const huggingface = createHuggingFace({
     apiKey: HF_API_KEY,
@@ -29,7 +30,6 @@ export async function POST(req: Request) {
     return new Response("No user query", { status: 400 });
   }
 
-  setProxy();
   // 1. 获取 query embedding
   const queryEmbedding = await getEmbedding(
     queryText,
@@ -80,11 +80,6 @@ export async function POST(req: Request) {
       ],
     },
   ];
-
-  // const resultStream = streamText({
-  //   model: huggingface("deepseek-ai/DeepSeek-V3-0324"),
-  //   messages: convertToModelMessages(ragMessages),
-  // });
 
   const resultStream = streamText({
     model: groq("qwen/qwen3-32b"),
