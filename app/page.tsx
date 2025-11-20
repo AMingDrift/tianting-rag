@@ -10,6 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ReactMarkdown from "react-markdown";
+import "github-markdown-css/github-markdown-light.css";
+import "./markdown-compact.css";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -56,10 +59,10 @@ export default function Chat() {
     <div className="flex flex-col min-h-screen w-full items-center backdrop-blur-md">
       <div className="flex flex-col w-full flex-1 items-center pt-5  ">
         <div
-          className="size-full flex flex-col gap-4 items-center overflow-auto  scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
+          className=" scrollbar-custom size-full flex flex-col gap-4 items-center overflow-auto  scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700"
           style={{ height: messagesHeight }}
         >
-          <div className="max-w-4xl px-4">
+          <div className="w-4xl max-w-4xl px-4">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -70,16 +73,29 @@ export default function Chat() {
                 <div
                   className={`whitespace-pre-wrap px-4 py-2 rounded-2xl max-w-[80%] break-words shadow-md mb-2 ${
                     message.role === "user"
-                      ? "bg-blue-100 text-blue-900"
-                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      ? "bg-blue-100/70 text-blue-900"
+                      : "bg-zinc-100/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
                   }`}
                 >
                   {message.parts.map((part, i) => {
                     switch (part.type) {
-                      case "text":
-                        return (
-                          <div key={`${message.id}-${i}`}>{part.text}</div>
+                      case "text": {
+                        // 屏蔽 <think>...</think> 标签及内容
+                        const cleanText = part.text.replace(
+                          /<think>[\s\S]*?<\/think>/g,
+                          ""
                         );
+                        return message.role === "user" ? (
+                          <div key={`${message.id}-${i}`}>{cleanText}</div>
+                        ) : (
+                          <div
+                            className="markdown-body bg-transparent!"
+                            key={`${message.id}-${i}`}
+                          >
+                            <ReactMarkdown>{cleanText}</ReactMarkdown>
+                          </div>
+                        );
+                      }
                       default:
                         return null;
                     }
@@ -93,7 +109,7 @@ export default function Chat() {
       </div>
       <form
         ref={formRef}
-        className="w-full max-w-4xl flex flex-col items-center gap-1 fixed bottom-0 left-1/2 -translate-x-1/2 rounded-md bg-white/80 dark:bg-zinc-9550/80 pb-6 pt-2 px-4 border-t border-zinc-200 dark:border-zinc-800"
+        className="w-full max-w-4xl w-4xl flex flex-col items-center gap-1 fixed bottom-0 left-1/2 -translate-x-1/2 rounded-md bg-white/80 dark:bg-zinc-9550/80 pb-6 pt-2 px-4 border-t border-zinc-200 dark:border-zinc-800"
         onSubmit={(e) => {
           e.preventDefault();
           sendMessage({ text: input });
@@ -103,10 +119,7 @@ export default function Chat() {
         <div className="flex flex-wrap gap-1 justify-start w-full mb-1 overflow-x-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                className="cursor-pointer rounded-xl px-4 py-2"
-                type="button"
-              >
+              <Button className="cursor-pointer" type="button">
                 常见问题
               </Button>
             </DropdownMenuTrigger>

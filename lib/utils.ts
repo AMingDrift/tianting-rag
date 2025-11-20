@@ -22,6 +22,7 @@ export async function getEmbedding(
   const res = await client.featureExtraction({
     model,
     inputs: text,
+    provider: "auto",
   });
   if (Array.isArray(res)) return res as number[];
   throw new Error("Embedding API 返回异常");

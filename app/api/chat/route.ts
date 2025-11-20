@@ -5,14 +5,15 @@ import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { getEmbedding } from "@/lib/utils";
+import { groq } from "@ai-sdk/groq";
+
+export const maxDuration = 30;
 
 const EMBEDDING_MODEL = "BAAI/bge-m3";
 const TOP_K = 5;
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
-
-  setProxy();
 
   const HF_API_KEY = process.env.HF_API_KEY || "";
   const huggingface = createHuggingFace({
@@ -28,6 +29,7 @@ export async function POST(req: Request) {
     return new Response("No user query", { status: 400 });
   }
 
+  setProxy();
   // 1. 获取 query embedding
   const queryEmbedding = await getEmbedding(
     queryText,
@@ -79,9 +81,15 @@ export async function POST(req: Request) {
     },
   ];
 
+  // const resultStream = streamText({
+  //   model: huggingface("deepseek-ai/DeepSeek-V3-0324"),
+  //   messages: convertToModelMessages(ragMessages),
+  // });
+
   const resultStream = streamText({
-    model: huggingface("deepseek-ai/DeepSeek-V3-0324"),
+    model: groq("qwen/qwen3-32b"),
     messages: convertToModelMessages(ragMessages),
   });
+
   return resultStream.toUIMessageStreamResponse();
 }

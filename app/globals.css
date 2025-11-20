@@ -120,3 +120,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  html[data-theme="dark"] {
+    .scrollbar-custom {
+      &::-webkit-scrollbar-thumb {
+        background-color: rgb(255 255 255 / 10%);
+      }
+    }
+  }
+
+  .scrollbar-custom {
+    &::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgb(0 0 0 / 30%);
+      background-clip: padding-box; /* 关键：背景色不延伸到边框 */
+      border: 1px solid transparent; /* 关键：1px 透明边框 = 空隙 */
+      border-radius: 9999px;
+    }
+
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+}
