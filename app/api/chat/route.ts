@@ -37,8 +37,6 @@ export async function POST(req: Request) {
     EMBEDDING_MODEL
   );
 
-  await sleep(2000);
-
   // 2. 检索数据库相关片段
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
