@@ -14,6 +14,8 @@ import ReactMarkdown from "react-markdown";
 import "github-markdown-css/github-markdown-light.css";
 import "./markdown-compact.css";
 import { toast } from "sonner";
+import { RainbowButton } from "@/components/ui/rainbow-button";
+import Link from "next/link";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -123,7 +125,7 @@ export default function Chat() {
           setInput("");
         }}
       >
-        <div className="flex flex-wrap gap-1 justify-start w-full mb-1 overflow-x-auto">
+        <div className="flex items-center gap-1 w-full mb-1 justify-between">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="cursor-pointer" type="button">
@@ -145,6 +147,16 @@ export default function Chat() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+          <RainbowButton size="sm">
+            <Link
+              className="animate-decoration text-sm"
+              href="https://www.amingdrift.com/blog/posts/tian-ting-ji-hua-luo-si-xian-jing"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              原文链接
+            </Link>
+          </RainbowButton>
         </div>
         <input
           className="w-full p-3 border border-zinc-300 dark:border-zinc-800 rounded-xl shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
