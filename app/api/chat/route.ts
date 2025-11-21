@@ -1,4 +1,4 @@
-import { setProxy } from "@/lib/utils";
+import { MultiRateLimiter, setProxy } from "@/lib/utils";
 import {
   streamText,
   UIMessage,
@@ -16,7 +16,44 @@ export const maxDuration = 30;
 const EMBEDDING_MODEL = "BAAI/bge-m3";
 const TOP_K = 5;
 
+// 创建一个多级限流器实例：
+// 1分钟最多3个请求，1小时最多20个请求，12小时最多50个请求
+const rateLimiter = new MultiRateLimiter([
+  { windowMs: 60 * 1000, maxRequests: 3 }, // 1分钟最多3个请求
+  { windowMs: 60 * 60 * 1000, maxRequests: 20 }, // 1小时最多20个请求
+  { windowMs: 12 * 60 * 60 * 1000, maxRequests: 50 }, // 12小时最多50个请求
+]);
+
+// 定期清理过期记录
+setInterval(() => {
+  rateLimiter.cleanup();
+}, 12 * 60 * 60 * 1000); // 12小时清理一次
+
 export async function POST(req: Request) {
+  // 获取客户端IP地址
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown";
+
+  // 检查是否超出速率限制
+  if (!rateLimiter.isAllowed(ip)) {
+    return new Response(
+      JSON.stringify({
+        error: "Too Many Requests",
+        message: "请求过于频繁，请稍后再试",
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "60",
+        },
+      }
+    );
+  }
+
   const { messages }: { messages: UIMessage[] } = await req.json();
 
   await setProxy();
