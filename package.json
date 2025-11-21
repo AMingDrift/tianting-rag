@@ -8,10 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "chunking": "ts-node scripts/chunking.ts",
+    "chunking": "NODE_TLS_REJECT_UNAUTHORIZED=0 ts-node scripts/chunking.ts",
     "query": "ts-node scripts/query.ts",
     "drizzle:generate": "pnpm exec drizzle-kit generate --config drizzle.config.ts",
-    "drizzle:push": "pnpm exec drizzle-kit push --config drizzle.config.ts",
+    "drizzle:push": "NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm exec drizzle-kit push --config drizzle.config.ts",
     "pg:restart": "sudo rm -rf volumes && sudo docker compose down && sudo docker compose up -d",
     "dbo": "npx drizzle-kit studio"
   },

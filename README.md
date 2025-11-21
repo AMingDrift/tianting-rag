@@ -40,11 +40,17 @@
 
 1. 启动 pgvector 数据库（需先安装 Docker Compose）：
 
+> 如果是 supabase，需要自行开启 pgvector 插件
+>
+> ```sql
+> CREATE EXTENSION IF NOT EXISTS vector;
+> ```
+
 ```bash
 docker compose up -d
 ```
 
-2. 安装依赖（需先安装 pnpm）：
+1. 安装依赖（需先安装 pnpm）：
 
 ```bash
 pnpm install
