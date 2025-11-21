@@ -86,7 +86,7 @@ async function main() {
     await db.insert(chunksTable).values({
       chunk,
       meta,
-      embedding,
+      embedding: embedding as number[],
     });
     console.log({
       meta,

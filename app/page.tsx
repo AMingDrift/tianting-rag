@@ -13,13 +13,20 @@ import {
 import ReactMarkdown from "react-markdown";
 import "github-markdown-css/github-markdown-light.css";
 import "./markdown-compact.css";
+import { toast } from "sonner";
 
 export default function Chat() {
   const [input, setInput] = useState("");
   const [messagesHeight, setMessagesHeight] = useState("auto");
   const formRef = useRef<HTMLFormElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage } = useChat();
+  const { messages, sendMessage } = useChat({
+    onError: (err) => {
+      console.error("前端捕获错误：", err);
+      // 显示错误提示（如弹窗、Toast）
+      toast.error(`请求失败：${err.message || "未知错误"}`);
+    },
+  });
 
   useEffect(() => {
     const calculateHeights = () => {

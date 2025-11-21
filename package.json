@@ -16,10 +16,7 @@
     "dbo": "npx drizzle-kit studio"
   },
   "dependencies": {
-    "@ai-sdk/deepseek": "^1.0.28",
     "@ai-sdk/groq": "^2.0.29",
-    "@ai-sdk/huggingface": "^0.0.9",
-    "@ai-sdk/openai": "^2.0.69",
     "@ai-sdk/react": "^2.0.97",
     "@huggingface/inference": "^4.13.3",
     "@langchain/core": "^1.0.6",
@@ -35,12 +32,14 @@
     "langchain": "^1.0.6",
     "lucide-react": "^0.554.0",
     "next": "16.0.3",
+    "next-themes": "^0.4.6",
     "pg": "^8.16.3",
     "pgvector": "^0.2.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "undici": "^7.16.0",
     "zod": "^4.1.12"

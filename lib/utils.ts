@@ -1,7 +1,9 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { InferenceClient } from "@huggingface/inference";
-// 仅在 Node.js 环境下动态引入 undici
+import {
+  type FeatureExtractionOutput,
+  InferenceClient,
+} from "@huggingface/inference";
 
 /**
  * Sleep for ms milliseconds
@@ -17,15 +19,13 @@ export async function getEmbedding(
   text: string,
   apiKey: string,
   model: string
-): Promise<number[]> {
+): Promise<FeatureExtractionOutput> {
   const client = new InferenceClient(apiKey);
-  const res = await client.featureExtraction({
-    model,
+  return await client.featureExtraction({
+    model: model,
     inputs: text,
     provider: "auto",
   });
-  if (Array.isArray(res)) return res as number[];
-  throw new Error("Embedding API 返回异常");
 }
 
 export async function setProxy() {

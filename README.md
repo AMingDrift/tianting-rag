@@ -123,7 +123,7 @@ pnpm query
 
 API 使用了以下技术：
 
-- `@ai-sdk/huggingface` 用于生成嵌入向量
+- `@huggingface/inference` 用于生成嵌入向量
 - `pg` 和 `drizzle-orm` 用于数据库操作
 - `@ai-sdk/groq` 用于调用大模型
 - `ai` SDK 用于流式文本生成

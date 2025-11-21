@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -17,6 +18,7 @@ export default function RootLayout({
         className={`antialiased bg-[url('/tianting.png')] bg-cover bg-center bg-no-repeat min-h-screen`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );
