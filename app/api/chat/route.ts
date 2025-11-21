@@ -31,28 +31,46 @@ export async function POST(req: Request) {
     return new Response("No user query", { status: 400 });
   }
 
+  let client: Client | undefined;
   try {
+    const dbUrl = process.env.DATABASE_URL || "";
     // 1. 获取 query embedding
-    const queryEmbedding = await getEmbedding(
+    const embeddingRaw = await getEmbedding(
       queryText,
       HF_API_KEY,
       EMBEDDING_MODEL
     );
+    // getEmbedding 可能返回 number | number[] | number[][]，需转为 number[]
+    let queryEmbedding: number[] = [];
+    if (typeof embeddingRaw === "number") {
+      queryEmbedding = [embeddingRaw];
+    } else if (Array.isArray(embeddingRaw)) {
+      if (embeddingRaw.length > 0 && Array.isArray(embeddingRaw[0])) {
+        // number[][]
+        queryEmbedding = embeddingRaw[0] as number[];
+      } else {
+        // number[]
+        queryEmbedding = embeddingRaw as number[];
+      }
+    }
 
-    // 2. 检索数据库相关片段
-    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    // 统一用 Postgres 查询 chunks 表
+    client = new Client({
+      connectionString: dbUrl,
+    });
     await client.connect();
     const db = drizzle(client);
     const embeddingStr = `ARRAY[${queryEmbedding.join(",")}]::vector`;
     const result = await db.execute(
       sql.raw(
         `SELECT chunk, meta, embedding, embedding <#> ${embeddingStr} AS cosine_distance
-       FROM chunks
-       ORDER BY embedding <#> ${embeddingStr}
-       LIMIT ${TOP_K}`
+         FROM chunks
+         ORDER BY embedding <#> ${embeddingStr}
+         LIMIT ${TOP_K}`
       )
     );
     await client.end();
+    client = undefined;
     const topChunks = result.rows as {
       chunk: string;
       meta: unknown;
@@ -86,6 +104,11 @@ export async function POST(req: Request) {
 
     return resultStream.toUIMessageStreamResponse();
   } catch (error) {
+    if (client) {
+      try {
+        await client.end();
+      } catch {}
+    }
     // 1. 捕获并判断 AI 调用相关错误（如 403、401、500 等）
     if (error instanceof APICallError) {
       console.error("AI API 调用错误：", error); // 日志记录错误详情
