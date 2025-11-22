@@ -5,9 +5,7 @@ import {
   convertToModelMessages,
   APICallError,
 } from "ai";
-import { Client } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
+import { createClient } from "@/lib/supabase/server";
 import { getEmbedding } from "@/lib/utils";
 import { groq } from "@ai-sdk/groq";
 
@@ -68,10 +66,9 @@ export async function POST(req: Request) {
     return new Response("No user query", { status: 400 });
   }
 
-  let client: Client | undefined;
   try {
-    const dbUrl = process.env.DATABASE_URL || "";
-    // 1. 获取 query embedding
+    const supabase = await createClient();
+
     const embeddingRaw = await getEmbedding(
       queryText,
       HF_API_KEY,
@@ -91,38 +88,28 @@ export async function POST(req: Request) {
       }
     }
 
-    // 统一用 Postgres 查询 chunks 表
-    client = new Client({
-      connectionString: dbUrl,
-    });
-    await client.connect();
-    const db = drizzle(client);
-    const embeddingStr = `ARRAY[${queryEmbedding.join(",")}]::vector`;
-    const result = await db.execute(
-      sql.raw(
-        `SELECT chunk, meta, embedding, embedding <#> ${embeddingStr} AS cosine_distance
-         FROM chunks
-         ORDER BY embedding <#> ${embeddingStr}
-         LIMIT ${TOP_K}`
-      )
-    );
-    await client.end();
-    client = undefined;
-    const topChunks = result.rows as {
-      chunk: string;
-      meta: unknown;
-      embedding: number[];
-      cosine_distance: number;
-    }[];
-    const context = topChunks.map((c) => `${c.chunk}`).join("\n\n");
+    const { data, error } = await supabase
+      .rpc("match_chunks", {
+        query_embedding: queryEmbedding,
+        match_count: TOP_K,
+      })
+      .select("chunk, meta, cosine_distance");
 
-    // 3. 拼接 prompt，调用大模型
-    const systemPrompt = `你是《天听计划：罗斯陷阱》小说问答助手，请结合给定片段和用户问题，精准、简洁地回答。优先用片段内容作答，不要编造。并给出引用的片段内容。`;
+    if (error) {
+      console.error("Supabase 向量搜索失败:", error);
+      throw new Error("检索失败");
+    }
+
+    // 确保 data 是数组格式，以便可以使用 map 方法
+    const dataArray = Array.isArray(data) ? data : [data];
+    const context = dataArray
+      .map((row: { chunk: string }) => row.chunk)
+      .join("\n\n");
+
+    // 3. 调用大模型（保持不变）
+    const systemPrompt = `你是《天听计划：罗斯陷阱》小说问答助手...`;
     const ragMessages: Omit<UIMessage, "id">[] = [
-      {
-        role: "system",
-        parts: [{ type: "text", text: systemPrompt }],
-      },
+      { role: "system", parts: [{ type: "text", text: systemPrompt }] },
       {
         role: "user",
         parts: [
@@ -141,11 +128,6 @@ export async function POST(req: Request) {
 
     return resultStream.toUIMessageStreamResponse();
   } catch (error) {
-    if (client) {
-      try {
-        await client.end();
-      } catch {}
-    }
     // 1. 捕获并判断 AI 调用相关错误（如 403、401、500 等）
     if (error instanceof APICallError) {
       console.error("AI API 调用错误：", error); // 日志记录错误详情
