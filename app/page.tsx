@@ -34,7 +34,9 @@ export default function Chat() {
     const calculateHeights = () => {
       if (formRef.current) {
         const formHeight = formRef.current.offsetHeight;
-        const screenHeight = window.innerHeight;
+        // 优先使用 window.visualViewport.height，兼容性处理
+        const screenHeight =
+          window.visualViewport?.height || window.innerHeight;
         const headerHeight = 20; // pt-5 = 1.25rem = 20px
         const availableHeight = screenHeight - formHeight - headerHeight;
         setMessagesHeight(`${availableHeight}px`);
