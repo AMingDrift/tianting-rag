@@ -1,15 +1,13 @@
+// query-supabase.ts
 import path from "path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
 import { getEmbedding, setProxy, sleep } from "../lib/utils.ts";
-import { Client } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { QUERY_LIST } from "../lib/constant.ts";
-import { exit } from "node:process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,59 +18,70 @@ dotenv.config({
 });
 
 const HF_API_KEY = process.env.HF_API_KEY || "";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || ""; // 通义千问的API Key
-const OPENAI_API_BASE = process.env.OPENAI_API_BASE || ""; // 通义千问兼容OpenAI的endpoint
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const OPENAI_API_BASE = process.env.OPENAI_API_BASE || "";
 
-setProxy();
+// 👇 使用 service_role_key（高权限，可调用 RPC）
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+}
 
 const EMBEDDING_MODEL = "BAAI/bge-m3";
 const TOP_K = 5;
 
 async function main() {
-  // 1. 连接数据库
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
-  await client.connect();
-  const db = drizzle(client);
+  await setProxy();
+  // 👇 创建 Supabase 客户端（服务端模式）
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   for (const QUERY_TEXT of QUERY_LIST) {
-    // 2. 获取 query embedding
+    console.log(`\n🔍 查询: ${QUERY_TEXT}`);
+
+    // 1. 获取 query embedding
     const queryEmbedding = await getEmbedding(
       QUERY_TEXT,
       HF_API_KEY,
       EMBEDDING_MODEL
     );
+    let embeddingArray: number[] = [];
+    if (Array.isArray(queryEmbedding)) {
+      embeddingArray = Array.isArray(queryEmbedding[0])
+        ? queryEmbedding[0]
+        : queryEmbedding;
+    } else {
+      embeddingArray = [queryEmbedding];
+    }
 
-    //   console.log("queryEmbedding:", queryEmbedding);
+    // 2. 调用 Supabase RPC 函数进行向量检索
+    const { data, error } = await supabase
+      .rpc("match_chunks", {
+        query_embedding: embeddingArray,
+        match_count: TOP_K,
+      })
+      .select("chunk, meta, cosine_distance");
 
-    // 3. pgvector 余弦相似度检索（直接用 SQL）
-    // 注意：embedding <=> $1 是 pgvector 的欧氏距离，cosine 距离用 embedding <#> $1
-    // drizzle.execute 不支持参数绑定数组，需手动拼接 embedding
-    const embeddingStr = `ARRAY[${queryEmbedding.join(",")}]::vector`;
-    const result = await db.execute(
-      sql.raw(
-        `SELECT chunk, meta, embedding, embedding <#> ${embeddingStr} AS cosine_distance
-       FROM chunks
-       ORDER BY embedding <#> ${embeddingStr}
-       LIMIT ${TOP_K}`
-      )
-    );
-    const topChunks = result.rows as {
+    if (error) {
+      console.error("向量检索失败:", error);
+      continue;
+    }
+
+    const topChunks = data as {
       chunk: string;
       meta: unknown;
-      embedding: number[];
       cosine_distance: number;
     }[];
     const context = topChunks
       .map((c, i) => `【片段${i + 1}】${c.chunk}`)
       .join("\n\n");
 
-    // 4. 用 langchain.js 调用通义千问大模型（OpenAI 兼容接口）
+    // 3. 调用大模型
     const llm = new ChatOpenAI({
       openAIApiKey: OPENAI_API_KEY,
-      configuration: {
-        baseURL: OPENAI_API_BASE,
-      },
-      modelName: "qwen-turbo", // 通义千问的模型名
+      configuration: { baseURL: OPENAI_API_BASE },
+      modelName: "qwen-turbo",
       temperature: 0.2,
     });
 
@@ -81,15 +90,13 @@ async function main() {
       new SystemMessage(systemPrompt),
       new HumanMessage(`已检索片段：\n${context}\n\n用户问题：${QUERY_TEXT}`),
     ];
-    const res = await llm.invoke(messages);
-    console.log("AI回答：", res.content);
 
-    // exit(1);
+    const res = await llm.invoke(messages);
+    console.log("🤖 AI回答：", res.content);
     console.log("--------------------------------------------------------");
+
     await sleep(3000);
   }
-
-  await client.end();
 }
 
 main().catch(console.error);

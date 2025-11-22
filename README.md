@@ -16,7 +16,7 @@
   - LangChain.js（RAG 框架）+ Vercel AI SDK
   - HuggingFace API（文本嵌入）
   - Groq API（通义千问大模型调用）
-- 数据库 ORM：Drizzle ORM
+- 数据库连接：Supabase JavaScript SDK
 
 ## 工作流程
 
@@ -36,21 +36,15 @@
 
 项目通过 Docker 提供完整的开发环境，支持本地快速部署和测试，适合学习和探索 RAG 技术的开发者使用。
 
-## 本地开发环境启动
+## 开发环境启动
 
-1. 启动 pgvector 数据库（需先安装 Docker Compose）：
+1. 新建 supabase 数据库 <https://supabase.com/>
 
-> 如果是 supabase，需要自行开启 pgvector 插件
->
-> ```sql
-> CREATE EXTENSION IF NOT EXISTS vector;
-> ```
+   1. 选择新加坡或者日本节点
+   2. 将[`./lib/supabase/init.sql`](./lib/supabase/init.sql) 放入 SQL Editor 执行
+   3. 复制 supabase 的环境变量到.env(可在 [Dashboard] -> [Project Settings] -> [API Settings] 获取)
 
-```bash
-docker compose up -d
-```
-
-1. 安装依赖（需先安装 pnpm）：
+2. 安装依赖（需先安装 pnpm）：
 
 ```bash
 pnpm install
@@ -60,19 +54,13 @@ pnpm install
 
 复制 `.env.example` 为 `.env`，并填写 HuggingFace API Key 和 Groq API Key。
 
-4. 生成并运行数据库迁移：
-
-```
-pnpm drizzle:generate && pnpm drizzle:migrate
-```
-
-5. 运行分块脚本（chunking）：
+4. 运行分块脚本（chunking）：
 
 ```bash
 pnpm chunking
 ```
 
-6. 启动开发服务器：
+5. 启动开发服务器：
 
 ```bash
 pnpm dev
@@ -130,7 +118,7 @@ pnpm query
 API 使用了以下技术：
 
 - `@huggingface/inference` 用于生成嵌入向量
-- `pg` 和 `drizzle-orm` 用于数据库操作
+- `@supabase/supabase-js` 用于数据库操作
 - `@ai-sdk/groq` 用于调用大模型
 - `ai` SDK 用于流式文本生成
 
