@@ -23,6 +23,9 @@ importers:
       '@langchain/openai':
         specifier: ^1.1.2
         version: 1.1.2(@langchain/core@1.0.6(@opentelemetry/api@1.9.0)(openai@6.9.1(ws@8.18.3)(zod@4.1.12)))(ws@8.18.3)
+      '@langchain/textsplitters':
+        specifier: ^1.0.0
+        version: 1.0.0(@langchain/core@1.0.6(@opentelemetry/api@1.9.0)(openai@6.9.1(ws@8.18.3)(zod@4.1.12)))
       '@radix-ui/react-dropdown-menu':
         specifier: ^2.1.16
         version: 2.1.16(@types/react-dom@19.2.3(@types/react@19.2.6))(@types/react@19.2.6)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -542,6 +545,12 @@ packages:
 
   '@langchain/openai@1.1.2':
     resolution: {integrity: sha512-o642toyaRfx7Cej10jK6eK561gkIGTCQrN42fqAU9OhmTBkUflmRNKhqbcHj/RU+NOJfFM//hgwNU2gHespEkw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@langchain/core': ^1.0.0
+
+  '@langchain/textsplitters@1.0.0':
+    resolution: {integrity: sha512-L1gOwOJXeM+6MKzrj9shSsDyH32j898jgqvVArOjdge2zLyY+Mv4aOuyAAxbPyaFdQXlxKfa9xjqIUyv8TzrqA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@langchain/core': ^1.0.0
@@ -3513,6 +3522,11 @@ snapshots:
       zod: 4.1.12
     transitivePeerDependencies:
       - ws
+
+  '@langchain/textsplitters@1.0.0(@langchain/core@1.0.6(@opentelemetry/api@1.9.0)(openai@6.9.1(ws@8.18.3)(zod@4.1.12)))':
+    dependencies:
+      '@langchain/core': 1.0.6(@opentelemetry/api@1.9.0)(openai@6.9.1(ws@8.18.3)(zod@4.1.12))
+      js-tiktoken: 1.0.21
 
   '@napi-rs/wasm-runtime@0.2.12':
     dependencies:

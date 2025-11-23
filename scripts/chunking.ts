@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import dotenv from "dotenv";
 import { getEmbedding, sleep, setProxy } from "../lib/utils.ts";
-
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 // 👇 创建专用的 Supabase 服务端客户端（用于脚本）
 import { createClient } from "@supabase/supabase-js";
 
@@ -35,43 +35,107 @@ function readNovel(filePath: string): string {
   return fs.readFileSync(filePath, "utf-8");
 }
 
-function chunkText(
+interface ChunkWithMeta {
+  chunk: string;
+  meta: {
+    chapter: string;
+    startInChapter: number; // 在章节内的起始位置（可选）
+    globalStart: number; // 在全文中的起始位置（可选）
+  };
+}
+
+async function chunkText(
   text: string,
   chunkSize = CHUNK_SIZE,
   overlap = CHUNK_OVERLAP
-): { chunk: string; meta: unknown }[] {
-  const chapterRegex = /^##+\s*(.+)$/gm;
+): Promise<ChunkWithMeta[]> {
+  // 1. 提取章节边界（保持你的原有逻辑）
+  const chapterRegex = /^##\s+第[零一二三四五六七八九十百千\d]+章\s+(.+)$/gm;
   let match;
   const chapters: { title: string; start: number; end: number }[] = [];
+
   while ((match = chapterRegex.exec(text)) !== null) {
     chapters.push({ title: match[1], start: match.index, end: 0 });
   }
-  chapters.forEach((c, i) => {
-    c.end = i < chapters.length - 1 ? chapters[i + 1].start : text.length;
+
+  // 设置每个章节的结束位置
+  for (let i = 0; i < chapters.length; i++) {
+    chapters[i].end =
+      i < chapters.length - 1 ? chapters[i + 1].start : text.length;
+  }
+
+  // 如果没有章节，则视为一个整体章节
+  if (chapters.length === 0) {
+    chapters.push({ title: "Untitled", start: 0, end: text.length });
+  }
+
+  console.log("[INFO] 检测到章节：", chapters);
+
+  // 2. 初始化 splitter（支持中日泰等语言）
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize,
+    chunkOverlap: overlap,
+    separators: [
+      "\r\n",
+      "\n\n", // 段落
+      "\n", // 行
+      "。",
+      "．",
+      ".", // 中文/全角/英文句号
+      "？",
+      "！",
+      "?",
+      "!",
+      "；",
+      ";",
+      "，",
+      ",",
+      "、",
+      " ", // 空格
+    ],
+    keepSeparator: false, // 分隔符不保留在 chunk 中
   });
 
-  const chunks: { chunk: string; meta: unknown }[] = [];
+  const allChunks: ChunkWithMeta[] = [];
+
+  // 3. 对每个章节单独切分
   for (const chapter of chapters) {
     const chapterText = text.slice(chapter.start, chapter.end).trim();
-    let pos = 0;
-    while (pos < chapterText.length) {
-      const chunk = chapterText.slice(pos, pos + chunkSize);
-      const meta = {
-        chapter: chapter.title,
-        start: pos,
-        end: pos + chunk.length,
-      };
-      chunks.push({ chunk, meta });
-      if (pos + chunkSize >= chapterText.length) break;
-      pos += chunkSize - overlap;
-    }
+    if (!chapterText) continue;
+
+    console.log(`[INFO] 正在处理章节：${chapterText.slice(0, 30)}...`);
+
+    // 使用 splitter 切分该章节
+    const docs = await splitter.createDocuments([chapterText]);
+
+    // 记录该章节在原文中的起始偏移，用于计算 globalStart
+    const chapterGlobalStart = chapter.start;
+
+    docs.forEach((doc, idx) => {
+      // 估算该 chunk 在章节内的起始位置（近似，因 splitter 可能 trim）
+      // 更精确的做法需自定义 lengthFunction 或解析 offset，但通常 meta 足够
+      const startInChapter = idx === 0 ? 0 : undefined; // 精确位置较复杂，可省略或估算
+
+      allChunks.push({
+        chunk: doc.pageContent,
+        meta: {
+          chapter: chapter.title,
+          globalStart: chapterGlobalStart, // 可用于定位原文
+          // 若需更精确位置，可结合源文本匹配，但通常非必需
+          startInChapter: startInChapter || 0,
+        },
+      });
+    });
   }
-  return chunks;
+
+  console.log("[INFO] 检测到 chunk：", allChunks);
+
+  return allChunks;
 }
 
 async function main() {
   const novel = readNovel(NOVEL_PATH);
-  const chunks = chunkText(novel);
+  const chunks = await chunkText(novel);
 
   await setProxy();
 
@@ -88,8 +152,8 @@ async function main() {
       embedding = [embeddingRaw];
     } else if (Array.isArray(embeddingRaw)) {
       embedding = Array.isArray(embeddingRaw[0])
-        ? embeddingRaw[0]
-        : embeddingRaw;
+        ? (embeddingRaw[0] as number[])
+        : (embeddingRaw as number[]);
     }
 
     // 👇 直接用 Supabase SDK 插入
