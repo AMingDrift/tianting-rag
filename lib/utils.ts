@@ -33,7 +33,7 @@ export async function setProxy() {
     console.log("---------------setProxy---------------");
     const PROXY_URL = process.env.PROXY_URL || "";
     if (PROXY_URL) {
-      // 动态引入 undici，避免在非 Node.js 环境下引入
+      // 动态引入 undici，避免在非 Node.js 环境(Next.js)下引入
       const { ProxyAgent, setGlobalDispatcher } = await import("undici");
       const proxyAgent = new ProxyAgent({
         uri: PROXY_URL,

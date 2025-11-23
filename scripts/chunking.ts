@@ -39,8 +39,8 @@ interface ChunkWithMeta {
   chunk: string;
   meta: {
     chapter: string;
-    startInChapter: number; // 在章节内的起始位置（可选）
-    globalStart: number; // 在全文中的起始位置（可选）
+    startInChapter: number; // 在章节内的起始位置
+    globalStart: number; // 在全文中的起始位置
   };
 }
 
@@ -49,7 +49,7 @@ async function chunkText(
   chunkSize = CHUNK_SIZE,
   overlap = CHUNK_OVERLAP
 ): Promise<ChunkWithMeta[]> {
-  // 1. 提取章节边界（保持你的原有逻辑）
+  // 1. 提取章节边界
   const chapterRegex = /^##\s+第[零一二三四五六七八九十百千\d]+章\s+(.+)$/gm;
   let match;
   const chapters: { title: string; start: number; end: number }[] = [];
@@ -156,7 +156,7 @@ async function main() {
         : (embeddingRaw as number[]);
     }
 
-    // 👇 直接用 Supabase SDK 插入
+    // 直接用 Supabase SDK 插入
     const { error } = await supabase.from("chunks").insert({
       chunk,
       meta,
